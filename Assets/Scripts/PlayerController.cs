@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : PortalTraveller
 {
@@ -8,11 +9,14 @@ public class PlayerController : PortalTraveller
     CharacterController controller;
     public float mouseSensitivity, movementSpeed, runMultiplier, gravity, jumpHeight, groundDistance;
     private float cameraAngle, verticalVelocity, reset;
-    [SerializeField]private bool jumped, grounded;
+    [SerializeField]private bool jumped, grounded, running;
     public Transform groundCheck;
     public LayerMask groundMask;
     public float interactDistance;
     public LayerMask interactMask;
+    [SerializeField] InputSystem_Actions inputActions;
+    InputAction movementAction;
+    InputAction lookAction;
 
     void Start()
     {
@@ -20,10 +24,9 @@ public class PlayerController : PortalTraveller
         Cursor.lockState = CursorLockMode.Locked;
         cameraAngle = 0f;
         controller = GetComponent<CharacterController>();
-        grounded = true; //TODO remove
+        grounded = true; //TODO remove? review for removal?
     }
 
-    // Update is called once per frame
     void Update()
     {
         Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width/2, Screen.height/2, 0));
@@ -33,61 +36,69 @@ public class PlayerController : PortalTraveller
         UpdateMovement();
     }
 
+    private void OnEnable()
+    {
+        inputActions = new InputSystem_Actions();
+        movementAction = inputActions.Player.Move;
+        movementAction.Enable();
+
+        lookAction = inputActions.Player.Look;
+        lookAction.Enable();
+
+        inputActions.Player.Attack.performed += Interact;
+        inputActions.Player.Attack.Enable();
+        inputActions.Player.Interact.performed += Interact;
+        inputActions.Player.Interact.Enable();
+
+        inputActions.Player.Jump.performed += Jump;
+        inputActions.Player.Jump.Enable();
+
+        inputActions.Player.Sprint.performed += Run;
+        inputActions.Player.Sprint.canceled += RunStop;
+        inputActions.Player.Sprint.Enable();
+    }
+
+    private void OnDisable()
+    {
+        movementAction.Disable();
+        lookAction.Disable();
+        inputActions.Player.Attack.Disable();
+        inputActions.Player.Interact.Disable();
+        inputActions.Player.Jump.Disable();
+        inputActions.Player.Sprint.Disable();
+    }
+
     void UpdateActions()
     {
-        if (Input.GetButtonDown("Interact"))
-        {
-            Ray r = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
-            RaycastHit hit;
-
-            if(Physics.Raycast(r, out hit, interactDistance, interactMask))
-            {
-                Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
-                if (interactable != null)
-                {
-                    interactable.Interact();
-                }
-            }
-        }
     }
 
     void UpdateFacing()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        Vector2 lookInput = lookAction.ReadValue<Vector2>();
 
-        cameraAngle -= mouseY;
+        cameraAngle -= lookInput.y * mouseSensitivity * 0.01f;
         cameraAngle = Mathf.Clamp(cameraAngle, -90f, 90f);
 
-        transform.Rotate(transform.up, mouseX);
+        transform.Rotate(transform.up, lookInput.x * mouseSensitivity * 0.01f);
         cam.transform.localRotation = Quaternion.Euler(cameraAngle, 0, 0);
     }
 
     void UpdateMovement()
     {
-        float x = Input.GetAxis("Horizontal");
-        float y = Input.GetAxis("Vertical");
-        jumped = Input.GetButtonDown("Jump");
-        grounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        Vector2 moveInput = movementAction.ReadValue<Vector2>();
 
-        Vector3 movement = transform.right * x + transform.forward * y * (Input.GetButton("Run") ? runMultiplier : 1);
-        movement = movement.magnitude > 1 ? movement.normalized * (Input.GetButton("Run") ? runMultiplier : 1) : movement;
+        Vector3 movement = transform.right * moveInput.x + transform.forward * moveInput.y * (running ? runMultiplier : 1);
+        movement = movement.magnitude > 1 ? movement.normalized * (running ? runMultiplier : 1) : movement;
 
         verticalVelocity = grounded && verticalVelocity < 0 ? -1f : verticalVelocity + gravity * Time.deltaTime;
         
-        if(jumped && grounded)
-        {
-            verticalVelocity = jumpHeight;
-//            movement.y += ;
-        }
-
         movement.y += verticalVelocity;
         controller.Move(movement * movementSpeed * Time.deltaTime);
 
-        if(transform.position.y < -500)
+        if(transform.position.y < -10)
         {
             reset = 3;
-            transform.position = new Vector3(-0f, 500f, -4f);
+            transform.position = new Vector3(-0f, 20f, -4f);
             Physics.SyncTransforms();
         }
         if (reset > 0)
@@ -101,5 +112,40 @@ public class PlayerController : PortalTraveller
         transform.position = pos;
         transform.rotation = rot;
         Physics.SyncTransforms();
+    }
+
+    private void Interact(InputAction.CallbackContext ctx)
+    {
+        Ray r = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+        RaycastHit hit;
+
+        if (Physics.Raycast(r, out hit, interactDistance, interactMask))
+        {
+            Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
+            if (interactable != null)
+            {
+                interactable.Interact();
+            }
+        }
+    }
+
+    private void Jump(InputAction.CallbackContext ctx)
+    {
+        grounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
+        if (grounded)
+        {
+            verticalVelocity = jumpHeight;
+        }
+    }
+
+    private void Run(InputAction.CallbackContext ctx)
+    {
+        running = true;
+    }
+
+    private void RunStop(InputAction.CallbackContext ctx)
+    {
+        running = false;
     }
 }

@@ -31,6 +31,9 @@ public class PortalController : MonoBehaviour
         {
             PortalTraveller traveller = trackedTravellers[i];
             Transform travellerTransform = traveller.transform;
+            if (activePortal.transform == null) { Debug.Log("activePortal"); Debug.Break(); }
+            if (transform.worldToLocalMatrix == null) { Debug.Log("transform"); }
+            if (travellerTransform.localToWorldMatrix == null) { Debug.Log("traveller"); }
             Matrix4x4 portalLocationOffset = activePortal.transform.localToWorldMatrix * transform.worldToLocalMatrix * travellerTransform.localToWorldMatrix;
 
             Vector3 offsetFromPortal = travellerTransform.position - transform.position;
@@ -67,7 +70,7 @@ public class PortalController : MonoBehaviour
         //TODO Split code out into function
         //Checks if portal surface is in view frustum
         Plane[] t = GeometryUtility.CalculateFrustumPlanes(playerCamera);
-        if (!GeometryUtility.TestPlanesAABB(t, portalMesh.bounds))
+        if (!GeometryUtility.TestPlanesAABB(t, portalMesh.bounds) || activePortal == null)
         {
             return;
         }
