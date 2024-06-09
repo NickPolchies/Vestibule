@@ -4,28 +4,43 @@ using UnityEngine;
 
 public class DoorController : Interactable
 {
-    PortalController portal;
-    Animator animator;
-    bool open;
+    [SerializeField] private DoorController linkedDoor;
+    private PortalController portal;
+    private Animator animator;
+    private bool isOpen;
+
+    private bool IsOpen { get; }
 
     void Start()
     {
         portal = GetComponent<PortalController>();
         animator = GetComponent<Animator>();
-        open = false;
+        isOpen = false;
     }
 
     public override void Interact()
     {
-        if (open)
+        if (isOpen && (linkedDoor == null ? true : linkedDoor.IsOpen))
         {
-            animator.SetTrigger("Close");
-            open = false;
+            linkedDoor?.Close();
+            Close();
         }
-        else
+        else if (!isOpen && (linkedDoor == null ? true : !linkedDoor.isOpen))
         {
-            animator.SetTrigger("Open");
-            open = true;
+            linkedDoor?.Open();
+            Open();
         }
+    }
+
+    public void Open()
+    {
+        animator.SetTrigger("Open");
+        isOpen = true;
+    }
+
+    public void Close()
+    {
+        animator.SetTrigger("Close");
+        isOpen = false;
     }
 }
