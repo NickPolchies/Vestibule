@@ -20,7 +20,6 @@ public class DoorController : Interactable
 
     public override void Interact()
     {
-        Debug.Log("Interact - isOpen: " + isOpen + ", Linked: " + (linkedDoor != null) + ", linked.IsOpen: " + (linkedDoor == null ? "Null" : linkedDoor.IsOpen));
         if (isOpen && (linkedDoor == null ? true : linkedDoor.IsOpen))
         {
             linkedDoor?.Close();

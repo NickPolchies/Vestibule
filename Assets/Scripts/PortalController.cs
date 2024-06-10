@@ -31,19 +31,14 @@ public class PortalController : MonoBehaviour
         {
             PortalTraveller traveller = trackedTravellers[i];
             Transform travellerTransform = traveller.transform;
-            if (activePortal.transform == null) { Debug.Log("activePortal"); Debug.Break(); }
-            if (transform.worldToLocalMatrix == null) { Debug.Log("transform"); }
-            if (travellerTransform.localToWorldMatrix == null) { Debug.Log("traveller"); }
             Matrix4x4 portalLocationOffset = activePortal.transform.localToWorldMatrix * transform.worldToLocalMatrix * travellerTransform.localToWorldMatrix;
 
             Vector3 offsetFromPortal = travellerTransform.position - transform.position;
             int portalSide = System.Math.Sign(Vector3.Dot(offsetFromPortal, transform.forward));
             int portalSideOld = System.Math.Sign(Vector3.Dot(traveller.previousOffsetFromPortal, transform.forward));
 
-            Debug.Log(portalSide + ", " + portalSideOld);
             if (portalSide != portalSideOld)
             {
-                Debug.Log("sideSwap");
                 Vector3 positionOld = travellerTransform.position;
                 Quaternion rotationOld = travellerTransform.rotation;
 
@@ -52,6 +47,9 @@ public class PortalController : MonoBehaviour
 
                 activePortal.OnTravellerEnterPortal(traveller);
                 trackedTravellers.RemoveAt(i);
+
+                CalculateActivePortal();
+                activePortal?.CalculateActivePortal();
             }
             else
             {
@@ -64,8 +62,7 @@ public class PortalController : MonoBehaviour
 
     public void Render()
     {
-        activePortal = Vector3.Dot(transform.forward, playerCamera.transform.position - transform.position) > 0 ?
-            frontPortal : backPortal;
+        CalculateActivePortal();
 
         //TODO Split code out into function
         //Checks if portal surface is in view frustum
@@ -117,8 +114,6 @@ public class PortalController : MonoBehaviour
         PortalTraveller traveller = other.GetComponent<PortalTraveller>();
         if (traveller)
         {
-            Debug.Log("Triggered");
-//            Debug.Break();
             OnTravellerEnterPortal(traveller);
         }
     }
@@ -146,4 +141,10 @@ public class PortalController : MonoBehaviour
         portalSuface.localPosition = -Vector3.forward * nearPlaneCornerDistance * ((camFacingPortal) ? -0.5f : 0.5f);
     }
     //*/
+
+    public void CalculateActivePortal()
+    {
+        float playerPosDotProduct = Vector3.Dot(transform.forward, playerCamera.transform.position - transform.position);
+        activePortal = playerPosDotProduct > 0 ? frontPortal : backPortal;
+    }
 }
