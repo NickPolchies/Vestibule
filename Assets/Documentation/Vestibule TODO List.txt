@@ -1,0 +1,5 @@
+Doors that are in the opposite state of their linked door should disable their portal
+	This means doors can never lead to nowhere
+	The door should re-enable if the state is made to match again
+	The door should not modify the state of the linked door if the current state does not match
+When heading backwards through a portal active in the other direction, don't teleport the player

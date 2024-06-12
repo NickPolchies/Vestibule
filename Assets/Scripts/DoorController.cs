@@ -16,6 +16,7 @@ public class DoorController : Interactable
         portal = GetComponent<PortalController>();
         animator = GetComponent<Animator>();
         isOpen = false;
+        portal?.Disable();
     }
 
     public override void Interact()
@@ -36,11 +37,13 @@ public class DoorController : Interactable
     {
         animator.SetTrigger("Open");
         isOpen = true;
+        portal?.Enable();
     }
 
     public void Close()
     {
         animator.SetTrigger("Close");
         isOpen = false;
+        portal?.Disable();
     }
 }

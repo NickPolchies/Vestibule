@@ -37,6 +37,8 @@ public class PortalController : MonoBehaviour
             int portalSide = System.Math.Sign(Vector3.Dot(offsetFromPortal, transform.forward));
             int portalSideOld = System.Math.Sign(Vector3.Dot(traveller.previousOffsetFromPortal, transform.forward));
 
+            //Teleport if player crosses portal
+            //TODO seems to activate when crossing backwards on a one-way portal. Fix this bug
             if (portalSide != portalSideOld)
             {
                 Vector3 positionOld = travellerTransform.position;
@@ -69,9 +71,11 @@ public class PortalController : MonoBehaviour
         Plane[] t = GeometryUtility.CalculateFrustumPlanes(playerCamera);
         if (!GeometryUtility.TestPlanesAABB(t, portalMesh.bounds) || activePortal == null)
         {
+            portalMesh.enabled = false; //TODO Test this
             return;
         }
 
+        portalMesh.enabled = true; //TODO test this
         activePortal.portalMesh.enabled = false;
         CreateViewTexture();
 
@@ -146,5 +150,15 @@ public class PortalController : MonoBehaviour
     {
         float playerPosDotProduct = Vector3.Dot(transform.forward, playerCamera.transform.position - transform.position);
         activePortal = playerPosDotProduct > 0 ? frontPortal : backPortal;
+    }
+
+    public void Disable()
+    {
+        enabled = false;
+    }
+
+    public void Enable()
+    {
+        enabled = true;
     }
 }
