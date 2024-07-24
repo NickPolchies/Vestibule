@@ -7,69 +7,79 @@ public class DoorController : Interactable
     [SerializeField] private DoorController frontDoor;
     [SerializeField] private DoorController backDoor;
 
-    [SerializeField] private DoorController linkedDoor;
+    [SerializeField] private DoorController frontLinkedDoor;
+    [SerializeField] private DoorController backLinkedDoor;
     private PortalController portal;
     private Animator animator;
     private bool isOpen;
-    private Camera playerCamera;
 
     private bool IsOpen { get { return isOpen; } }
 
     void Start()
     {
-        portal = GetComponent<PortalController>();
+        portal = GetComponentInChildren<PortalController>();
         animator = GetComponent<Animator>();
-        playerCamera = Camera.main;
         isOpen = false;
         portal?.Disable();
     }
 
     public override void Interact()
     {
-
-        if (isOpen && (linkedDoor == null ? true : linkedDoor.IsOpen))
+        if (isOpen)
         {
-            linkedDoor?.Close();
             Close();
         }
-        else if (!isOpen && (linkedDoor == null ? true : !linkedDoor.isOpen))
+        else if (!isOpen)
         {
-            updateLinkedDoor();
-            linkedDoor?.Open();
             Open();
         }
     }
 
     public void Open()
     {
+        if (isOpen)
+        {
+            return;
+        }
+
         animator.SetTrigger("Open");
-        isOpen = true;
         portal?.Enable();
+        isOpen = true;
+
+        UpdateLinkedDoor();
+
+        frontLinkedDoor?.Open();
+        backLinkedDoor?.Open();
     }
 
     public void Close()
     {
+        if(!isOpen)
+        { 
+            return;
+        }
+
         animator.SetTrigger("Close");
-        isOpen = false;
         portal?.Disable();
+        isOpen = false;
+
+        frontLinkedDoor?.Close();
+        backLinkedDoor?.Close();
     }
 
-    private void updateLinkedDoor()
+    private void UpdateLinkedDoor()
     {
-        if (frontDoor != null && playerIsInFront())
-        {
-            linkedDoor = frontDoor;
-            frontDoor.linkedDoor = this;
-        }
-        else if (backDoor != null && !playerIsInFront())
-        {
-            linkedDoor = backDoor;
-            frontDoor.linkedDoor = this;
-        }
+        frontLinkedDoor = frontDoor;
+        backLinkedDoor = backDoor;
+        frontDoor.backDoor = this;
+        backDoor.frontDoor = this;
+
+        portal.SetFrontPortal(frontDoor.portal);
+        portal.SetBackPortal(backDoor.portal);
     }
 
-    private bool playerIsInFront()
+    private bool PlayerIsInFront()
     {
-        return Vector3.Dot(transform.forward, playerCamera.transform.position - transform.position) > 0;
+        return Vector3.Dot(transform.forward, PlayerController.Player.transform.position - transform.position) > 0;
     }
 }

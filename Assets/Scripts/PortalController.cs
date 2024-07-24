@@ -161,4 +161,14 @@ public class PortalController : MonoBehaviour
     {
         enabled = true;
     }
+
+    public void SetFrontPortal(PortalController portal)
+    {
+        frontPortal = portal;
+    }
+
+    public void SetBackPortal(PortalController portal)
+    {
+        backPortal = portal;
+    }
 }

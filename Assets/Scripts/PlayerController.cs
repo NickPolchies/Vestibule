@@ -18,6 +18,14 @@ public class PlayerController : PortalTraveller
     InputAction movementAction;
     InputAction lookAction;
 
+    private static PlayerController player;
+    public static PlayerController Player { get { return player; } }
+
+    private void Awake()
+    {
+        player = this;
+    }
+
     void Start()
     {
         cam = Camera.main;
